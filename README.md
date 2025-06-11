@@ -12,7 +12,14 @@ First, if you haven't already, install uv:
 pip install uv
 ```
 
-Next, navigate to your project directory and install the dependencies:
+Next, create and activate a virtual environment using uv and install the
+dependencies defined in `pyproject.toml`:
+
+```bash
+uv venv        # create a .venv folder
+source .venv/bin/activate
+uv sync        # install packages from pyproject/uv.lock
+```
 
 (Optional) Lock the dependencies and install them by using the CLI command:
 ```bash
