@@ -7,17 +7,18 @@ import pandas as pd
 import sqlite3
 import os
 
+DB_PATH = os.getenv("DATABASE_URL", "ds_salaries.db")
+
 
 # Define tools outside the class - Fixed parameter handling
 @tool("list_tables")
 def list_tables() -> str:
     """List all tables in the database"""
     try:
-        conn = sqlite3.connect('ds_salaries.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = cursor.fetchall()
-        conn.close()
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = cursor.fetchall()
         return f"Available tables: {[table[0] for table in tables]}"
     except Exception as e:
         return f"Error listing tables: {e}"
@@ -27,20 +28,18 @@ def list_tables() -> str:
 def tables_schema(table_name: str = "salaries") -> str:
     """Get the schema/structure of a specific table"""
     try:
-        conn = sqlite3.connect('ds_salaries.db')
-        cursor = conn.cursor()
-        cursor.execute(f"PRAGMA table_info({table_name});")
-        columns = cursor.fetchall()
-        conn.close()
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"PRAGMA table_info({table_name});")
+            columns = cursor.fetchall()
 
         schema_info = f"Schema for table '{table_name}':\n"
         for col in columns:
             schema_info += f"- {col[1]} ({col[2]})\n"
 
         # Add sample data
-        conn = sqlite3.connect('ds_salaries.db')
-        df_sample = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 3", conn)
-        conn.close()
+        with sqlite3.connect(DB_PATH) as conn:
+            df_sample = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 3", conn)
 
         schema_info += f"\nSample data:\n{df_sample.to_string()}"
         return schema_info
@@ -52,9 +51,8 @@ def tables_schema(table_name: str = "salaries") -> str:
 def execute_sql(sql_query: str) -> str:
     """Execute a SQL query and return results"""
     try:
-        conn = sqlite3.connect('ds_salaries.db')
-        df = pd.read_sql(sql_query, conn)
-        conn.close()
+        with sqlite3.connect(DB_PATH) as conn:
+            df = pd.read_sql(sql_query, conn)
 
         if len(df) > 50:
             return f"Query executed successfully. Results (showing first 50 rows):\n{df.head(50).to_string()}\n\nTotal rows: {len(df)}"
@@ -68,11 +66,10 @@ def execute_sql(sql_query: str) -> str:
 def check_sql(sql_query: str) -> str:
     """Check if SQL query is valid without executing it fully"""
     try:
-        conn = sqlite3.connect('ds_salaries.db')
-        # Use EXPLAIN to check query validity
-        cursor = conn.cursor()
-        cursor.execute(f"EXPLAIN {sql_query}")
-        conn.close()
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            # Use EXPLAIN to check query validity
+            cursor.execute(f"EXPLAIN {sql_query}")
         return "SQL query is valid and can be executed."
     except Exception as e:
         return f"SQL query validation failed: {e}"
@@ -91,7 +88,7 @@ class Nltosql():
 
     def setup_database(self):
         """Convert CSV to SQLite database if it doesn't exist"""
-        db_path = 'ds_salaries.db'
+        db_path = DB_PATH
         csv_path = 'ds_salaries.csv'
 
         # Check if database exists and is newer than CSV
@@ -104,14 +101,9 @@ class Nltosql():
                 # Read CSV file
                 df = pd.read_csv(csv_path)
 
-                # Create SQLite connection
-                conn = sqlite3.connect(db_path)
-
-                # Convert to SQL table
-                df.to_sql('salaries', conn, index=False, if_exists='replace')
-
-                # Close connection
-                conn.close()
+                # Create SQLite connection and convert to SQL table
+                with sqlite3.connect(db_path) as conn:
+                    df.to_sql('salaries', conn, index=False, if_exists='replace')
 
                 print(f"Database created successfully: {db_path}")
                 print(f"Table 'salaries' created with {len(df)} rows")
@@ -173,3 +165,4 @@ class Nltosql():
             verbose=True,
             # process=Process.hierarchical
         )
+

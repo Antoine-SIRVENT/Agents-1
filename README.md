@@ -22,6 +22,12 @@ crewai install
 
 **Add your `OPENAI_API_KEY` into the `.env` file**
 
+Copy `.env.example` to `.env` and set the values for your environment:
+
+```bash
+cp .env.example .env
+```
+
 - Modify `src/nltosql/config/agents.yaml` to define your agents
 - Modify `src/nltosql/config/tasks.yaml` to define your tasks
 - Modify `src/nltosql/crew.py` to add your own logic, tools and specific args
@@ -37,7 +43,13 @@ $ crewai run
 
 This command initializes the nlToSql Crew, assembling the agents and assigning them tasks as defined in your configuration.
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+If you prefer to use the web interface, start the Flask server:
+
+```bash
+flask --app src.app run
+```
+
+This example, unmodified, will create a `report.md` file with the output of a research on LLMs in the root folder.
 
 ## Understanding Your Crew
 
